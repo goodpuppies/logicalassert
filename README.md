@@ -14,7 +14,9 @@ function isAdmin(user) {
         user() { variable = false }
         //unhandled user value throws an assertion error implictly
     });
-    return variable //cant return undefined because alternative to not assigning a value is an assertion error 👍
+    return variable
+//will never return undefined because
+//alternative to not assigning a value is an assertion error 👍
 }
 
 //admin must be admin assertion
