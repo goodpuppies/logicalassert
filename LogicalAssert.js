@@ -32,7 +32,7 @@ export function assert(value) {
         nodeAssert(false,
             `\nAssertion failed for value: ${value}\n` +
             `Valid values: ${validValues}\n` +
-            `Got: ${typeof value}\n` +
+            `Got: ${value} typeof ${typeof value}\n` +
             `At: ${callSite}`
         )
     }

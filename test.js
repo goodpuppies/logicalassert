@@ -1,5 +1,36 @@
 import { assert } from "./LogicalAssert.js"
 
+function isAdmin(user) {
+    let variable
+    assert(user)({
+        admin() { variable = true},
+        user() { variable = false }
+        //unhandled user value throws an assertion error implictly
+    });
+    return variable // can not be undefined 👍
+}
+
+//admin must be admin assertion
+assert(isAdmin('admin'))({
+    true() { console.log('admin is admin') }
+    //false would throw
+})
+//user must not be admin assertion
+assert(isAdmin('user'))({
+    false() { console.log('user not admin') }
+    //true would throw
+})
+//undefined behaviour throws
+try {
+    assert(isAdmin('test'))({
+        false() { console.log('test not admin') }
+    })
+} catch (_error) {
+    console.log("expected")
+}
+
+
+
 
 // Simulate the postal service environment
 const dummyPostalService = {
