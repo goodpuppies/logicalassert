@@ -36,8 +36,7 @@
  */
 import { assert as stdAssert } from "@std/assert";
 import { evaluateDslCondition } from "./dsl.ts";
-import type { HandlerArgumentForInference, UnionOfAllHandlerReturnTypes } from "./libtypes.ts";
-import type { LogicalAssertBuilder } from "./types.ts";
+import type { LogicalAssertBuilder, HandlerArgumentForInference, UnionOfAllHandlerReturnTypes } from "./types.ts";
 
 
 /**
