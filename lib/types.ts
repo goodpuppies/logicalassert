@@ -1,15 +1,27 @@
-// --- Advanced Types for Inference --- 
+// --- INTERNAL - Advanced Types for Inference --- 
+// These types are crucial for the library's internal type inference.
+// They are exported to ensure correct type resolution for library consumers,
+// but direct usage is generally not recommended unless you are deeply familiar
+// with the library's type system.
 
-// Describes a basic handler structure for a given input type TInput.
-// 'any' is used as a placeholder for the return type, which will be inferred.
+/**
+ * @internal
+ * Describes the basic structure of a handler for a given input type `TInput`.
+ * This type is used internally for inferring the return types of handlers.
+ * 'any' is used as a placeholder for return types, which are precisely inferred elsewhere.
+ */
 export type BaseHandlerForInference<TInput> = 
   // deno-lint-ignore no-explicit-any
   | ((value: any) => any) 
   // deno-lint-ignore no-explicit-any
   | { condition: boolean | Record<string, string | true>, exec?: (value: any) => any };
 
-// Describes the structure of the 'handlers' argument for inference purposes.
-// It's similar to AssertionHandlers but designed to help infer a union of return types.
+/**
+ * @internal
+ * Describes the structure of the `handlers` argument passed to `.with()`.
+ * This type is central to inferring the union of all possible return types from the handlers.
+ * It's similar to `AssertionHandlers` but specifically designed for type inference.
+ */
 export type HandlerArgumentForInference<TInput> = 
   & Omit<{ [key: string]: BaseHandlerForInference<TInput> }, 'unknown' | 'Error'>
   & { 
@@ -19,7 +31,12 @@ export type HandlerArgumentForInference<TInput> =
       Error?: (error: Error) => any;
     };
 
-// Utility type: Gets the actual return type of a single handler from its structure.
+/**
+ * @internal
+ * Utility type to extract the actual return type from a single handler's structure.
+ * It handles function handlers, conditional handlers with `exec`, and conditional handlers
+ * without `exec` (which implicitly return `true`).
+ */
 export type GetHandlerActualReturnType<THandler> = 
   THandler extends (...args: any) => any
   ? ReturnType<THandler> // It's a direct function handler
@@ -29,7 +46,11 @@ export type GetHandlerActualReturnType<THandler> =
       ? true // It's a conditional handler without an exec, so its implicit return is true
       : never;
 
-// Utility type: Computes the union of return types from all handlers in a THandlersObject.
+/**
+ * @internal
+ * Utility type that computes the union of all possible return types from an object of handlers.
+ * This is the magic that provides precise return type inference for the `.with()` method.
+ */
 export type UnionOfAllHandlerReturnTypes<THandlersObject> = {
   [K in keyof THandlersObject]: GetHandlerActualReturnType<THandlersObject[K]>
 }[keyof THandlersObject];
