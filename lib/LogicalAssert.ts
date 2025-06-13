@@ -8,7 +8,7 @@
  * import { assert } from "./LogicalAssert.ts"; // Or from JSR/CDN
  *
  * const value = "admin";
- * assert(value)({
+ * assert(value).with({
  *   admin: () => console.log("User is admin"),
  *   user: () => console.log("User is regular user"),
  *   unknown: () => console.log("Unknown user type")
@@ -21,7 +21,7 @@
  * import { assert } from "./LogicalAssert.ts";
  *
  * const data = { id: 1, type: "product", stock: 10 };
- * assert(data)({
+ * assert(data).with({
  *   productInStock: {
  *     condition: { type: "product", stock: "number" }, // stock must be a number and exist
  *     exec: (p) => {
@@ -44,30 +44,46 @@ import type { LogicalAssertBuilder } from "./types.ts";
  * Creates an assertion context for a given value, allowing for conditional
  * execution of handlers via a `.with()` method.
  *
- * @template TInput The type of the input `value` being asserted.
+ * The return type of the `.with()` method is automatically inferred as a union
+ * of all possible return types from the provided handlers, making it highly
+ * type-safe.
  *
+ * @template TInput The type of the input `value` being asserted.
  * @param value The value to assert against.
  * @returns An object with a `.with()` method that accepts the handlers.
  *
- * @example Basic usage with inferred return type:
- * ```typescript
- * const result = assert("hello").with({
- *   hello: () => "world", // returns string
- *   other: () => 123    // returns number
- * });
- * // result is typed as string | number
- * ```
+ * @example
+ * ```ts
+ * import { assertEquals } from "@std/assert";
  *
- * @example Specifying handler types explicitly:
- * ```typescript
- * import { assert, ValueHandler } from "./LogicalAssert.ts";
- * const userStatus = assert(user.role).with<AssertionHandlers<string, string | null>>({
- *   admin: () => "Administrator",
- *   editor: () => "Editor",
- *   viewer: () => "Viewer",
- *   unknown: () => null
+ * // 1. The result is the return value of the matched handler.
+ * const greeting = assert("world").with({
+ *   world: () => "Hello, world!",
+ *   unknown: () => "Hello, stranger!",
  * });
- * // userStatus is typed as string | null
+ * assertEquals(greeting, "Hello, world!");
+ *
+ * // 2. Type inference works across different return types.
+ * const result = assert(typeof Deno).with({
+ *   object: () => "Running in Deno", // returns string
+ *   undefined: () => 123,             // returns number
+ * });
+ * // `result` is correctly typed as `string | number`.
+ * if (typeof result === 'string') {
+ *   assertEquals(result, "Running in Deno");
+ * }
+ *
+ * // 3. An error is thrown if no handler matches and 'unknown' is missing.
+ * try {
+ *   assert("unexpected").with({
+ *     expected: () => "this will not run",
+ *   });
+ * } catch (e) {
+ *   // The error object is of type unknown, so we must verify it's an Error.
+ *   if (e instanceof Error) {
+ *     assert(e.message.includes("Assertion failed for value: unexpected")).with({});
+ *   }
+ * }
  * ```
  */
 export function assert<TInput>(value: TInput): LogicalAssertBuilder<TInput> {

@@ -4,9 +4,9 @@
 // 'any' is used as a placeholder for the return type, which will be inferred.
 export type BaseHandlerForInference<TInput> = 
   // deno-lint-ignore no-explicit-any
-  | ((value: TInput) => any) 
+  | ((value: any) => any) 
   // deno-lint-ignore no-explicit-any
-  | { condition: boolean | Record<string, string | true>, exec: (value: TInput) => any };
+  | { condition: boolean | Record<string, string | true>, exec: (value: any) => any };
 
 // Describes the structure of the 'handlers' argument for inference purposes.
 // It's similar to AssertionHandlers but designed to help infer a union of return types.
