@@ -6,7 +6,7 @@ import { assertEquals, assertThrows } from "jsr:@std/assert";
 // --- Basic Value Matching --- 
 Deno.test("Basic Value Matching - String", () => {
   let executed = false;
-  assert("hello")({
+  assert("hello").with({
     hello() { executed = true; },
     world() { executed = false; }
   });
@@ -15,7 +15,7 @@ Deno.test("Basic Value Matching - String", () => {
 
 Deno.test("Basic Value Matching - Number", () => {
   let executed = false;
-  assert(42)({
+  assert(42).with({
     42() { executed = true; },
     43() { executed = false; }
   });
@@ -26,7 +26,7 @@ Deno.test("Basic Value Matching - Number", () => {
 
 Deno.test("Basic Value Matching - Boolean false", () => {
   let executed = false;
-  assert(false)({
+  assert(false).with({
     false() { executed = true; },
     true() { executed = false; }
   });
@@ -35,7 +35,7 @@ Deno.test("Basic Value Matching - Boolean false", () => {
 
 Deno.test("Basic Value Matching - Null", () => {
   let executed = false;
-  assert(null)({
+  assert(null).with({
     null() { executed = true; },
     undefined() { executed = false; }
   });
@@ -44,7 +44,7 @@ Deno.test("Basic Value Matching - Null", () => {
 
 Deno.test("Basic Value Matching - Undefined", () => {
   let executed = false;
-  assert(undefined)({
+  assert(undefined).with({
     undefined() { executed = true; },
     null() { executed = false; }
   });
@@ -54,7 +54,7 @@ Deno.test("Basic Value Matching - Undefined", () => {
 // --- Type-Based Matching --- 
 Deno.test("Type Matching - String", () => {
   let executed = false;
-  assert("test string")({
+  assert("test string").with({
     string(val: string) {
       executed = true;
       assertEquals(val, "test string");
@@ -66,7 +66,7 @@ Deno.test("Type Matching - String", () => {
 
 Deno.test("Type Matching - Number", () => {
   let executed = false;
-  assert(123)({
+  assert(123).with({
     number(val: number) {
       executed = true;
       assertEquals(val, 123);
@@ -89,7 +89,7 @@ interface TestObject {
 Deno.test("DSL Schema - Basic Property Existence", () => {
   const obj: TestObject = { name: "Alice", isActive: true, tags: ["a"] };
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { name: true, isActive: true },
       exec(val: TestObject) {
@@ -104,7 +104,7 @@ Deno.test("DSL Schema - Basic Property Existence", () => {
 Deno.test("DSL Schema - Property Type String", () => {
   const obj: TestObject = { name: "Bob", age: 30, isActive: false, tags: ["b", "c"] };
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { name: 'string', age: 'number', isActive: 'boolean' },
       exec(val: TestObject) {
@@ -119,7 +119,7 @@ Deno.test("DSL Schema - Property Type String", () => {
 Deno.test("DSL Schema - Property Type Array", () => {
   const obj: TestObject = { name: "Charlie", isActive: true, tags: ["x", "y", "z"] };
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { tags: 'array' },
       exec(val: TestObject) {
@@ -134,7 +134,7 @@ Deno.test("DSL Schema - Property Type Array", () => {
 Deno.test("DSL Schema - Property Type Undefined (Present)", () => {
   const obj: TestObject = { name: "David", isActive: false, tags: [], jobTitle: undefined };
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { jobTitle: 'undefined' },
       exec(val: TestObject) {
@@ -149,7 +149,7 @@ Deno.test("DSL Schema - Property Type Undefined (Present)", () => {
 Deno.test("DSL Schema - Property Type Undefined (Missing)", () => {
   const obj: TestObject = { name: "Eve", isActive: true, tags: [] }; // jobTitle is missing
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { jobTitle: 'undefined' }, // This should match because 'undefined' check allows missing props
       exec() {
@@ -163,7 +163,7 @@ Deno.test("DSL Schema - Property Type Undefined (Missing)", () => {
 Deno.test("DSL Schema - Mismatch (Wrong Type)", () => {
   const obj = { name: "Frank", age: "40" }; // age is string, schema expects number
   let executed = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { name: 'string', age: 'number' },
       exec() { executed = true; /* Should not run */ }
@@ -176,7 +176,7 @@ Deno.test("DSL Schema - Mismatch (Wrong Type)", () => {
 Deno.test("DSL Schema - Mismatch (Missing Property for 'true' check)", () => {
   const obj = { name: "Grace" }; // age is missing
   let executedMatchHandler = false;
-  assert(obj)({
+  assert(obj).with({
     match: {
       condition: { name: 'string', age: true },
       exec() { executedMatchHandler = true; /* Should not run */ }
@@ -189,7 +189,7 @@ Deno.test("DSL Schema - Mismatch (Missing Property for 'true' check)", () => {
 // --- Conditional Handlers (Boolean) --- 
 Deno.test("Conditional Handler - Boolean True", () => {
   let executed = false;
-  assert("data")({
+  assert("data").with({
     process: {
       condition: true,
       exec(val: string) {
@@ -204,7 +204,7 @@ Deno.test("Conditional Handler - Boolean True", () => {
 Deno.test("Conditional Handler - Boolean False", () => {
   let processHandlerRan = false;
   let unknownHandlerRan = false;
-  assert("data")({
+  assert("data").with({
     process: {
       condition: false,
       exec() { processHandlerRan = true; /* Should not run */ }
@@ -218,7 +218,7 @@ Deno.test("Conditional Handler - Boolean False", () => {
 // --- Unknown Handler --- 
 Deno.test("Unknown Handler - Basic", () => {
   let executed = false;
-  assert("unexpected value")({
+  assert("unexpected value").with({
     expected() { executed = false; },
     unknown(val: string) {
       executed = true;
@@ -231,7 +231,7 @@ Deno.test("Unknown Handler - Basic", () => {
 // --- Error on Unhandled Cases --- 
 Deno.test("Error on Unhandled - No Unknown Handler", () => {
   assertThrows(() => {
-    assert("unhandled")({
+    assert("unhandled").with({
       handled() { /* do nothing */ }
     });
   }, Error, "Assertion failed for value: unhandled", "Should throw error for unhandled case without unknown handler");
@@ -240,7 +240,7 @@ Deno.test("Error on Unhandled - No Unknown Handler", () => {
 Deno.test("Error on Unhandled - DSL Mismatch, No Unknown", () => {
   const obj = { type: "wrong" };
   assertThrows(() => {
-    assert(obj)({
+    assert(obj).with({
       match: {
         condition: { type: "correct" },
         exec() { /* do nothing */ }
@@ -252,7 +252,7 @@ Deno.test("Error on Unhandled - DSL Mismatch, No Unknown", () => {
 // --- From test.js: isAdmin example --- 
 function isAdmin(user: string): boolean {
   let variable = false; // Default to false
-  assert(user)({
+  assert(user).with({
     admin() { variable = true; },
     user() { variable = false; },
     // Implicitly, any other string for 'user' would cause an error if no 'unknown' handler
@@ -279,7 +279,7 @@ Deno.test("isAdmin - unhandled without unknown (if unknown handler removed from 
   // Temporarily redefine isAdmin without 'unknown' for this specific test
   function isAdminStrict(user: string): boolean {
     let variable = false;
-    assert(user)({
+    assert(user).with({
         admin() { variable = true; },
         user() { variable = false; }
     });
