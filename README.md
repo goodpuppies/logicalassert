@@ -30,8 +30,9 @@ function getRoleMessage(userType: string): string {
 **After (with `LogicalAssert`):**
 
 ```typescript
+import { assert } from "./lib/LogicalAssert.ts";
 function getRoleMessage(userType: string): string {
-  return assert(userType)({
+  return assert(userType).with({
     admin: () => "Welcome, Administrator!",
     user: () => "Hello, User!",
     unknown: () => "Access denied."
@@ -58,11 +59,12 @@ This pattern ensures that `getRoleMessage` always returns a string (because an u
 ## Basic Usage
 
 ```typescript
+import { assert } from "./lib/LogicalAssert.ts";
 // 1. Value Matching
 const value = "admin";
 let role = "guest";
 
-assert(value)({
+assert(value).with({
   admin() { role = "Administrator"; },
   user() { role = "Regular User"; },
   // throw on unknown
@@ -71,7 +73,7 @@ console.log(`Role: ${role}`); // Output: Role: Administrator
 
 // 2. Type Matching
 const input: unknown = 123;
-assert(input)({
+assert(input).with({
   string(val: string) { console.log(`String: ${val.toUpperCase()}`); },
   number(val: number) { console.log(`Number: ${val.toFixed(2)}`); },
   boolean(val: boolean) { console.log(`Boolean: ${val}`); },
@@ -92,7 +94,7 @@ const profile2: UserProfile = { id: 2, username: "john_doe", email: "john@exampl
 const profile3: unknown = { id: 3 }; // Missing username
 
 function processProfile(profile: unknown) {
-  assert(profile)({
+  assert(profile).with({
     activeUser: {
       condition: { id: 'number', username: 'string', isActive: true },
       exec: (p: UserProfile) => console.log(`Active user: ${p.username}`)
@@ -115,7 +117,7 @@ processProfile(profile3); // Output: Incomplete profile for ID: 3. Username is m
 
 // 4. Unhandled Case Error
 try {
-  assert("unexpected")({
+  assert("unexpected").with({
     expected() { console.log("This won't run"); }
   });
 } catch (e: any) {
@@ -128,8 +130,9 @@ try {
 ### Conditional Handlers with Booleans
 
 ```typescript
+import { assert } from "./lib/LogicalAssert.ts";
 const count = 5;
-assert(count)({
+assert(count).with({
   handlePositive: {
     condition: count > 0,
     exec: (val) => console.log(`Count is positive: ${val}`)
@@ -145,12 +148,13 @@ assert(count)({
 ### Async Handlers
 
 ```typescript
+import { assert } from "./lib/LogicalAssert.ts";
 async function fetchData(id: number): Promise<{ data: string }> {
   return new Promise(resolve => setTimeout(() => resolve({ data: `Data for ${id}` }), 50));
 }
 
 async function processItem(item: string | number) {
-  return await assert(item)({
+  return await assert(item).with({
     string: async (valStr: string) => {
       console.log(`Processing string: ${valStr}`);
       return `STRING_${valStr.toUpperCase()}`;
