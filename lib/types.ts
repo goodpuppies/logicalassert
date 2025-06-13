@@ -10,11 +10,13 @@ export type ValueHandler<T, R> = (value: T) => R;
 /**
  * Represents a conditional handler object.
  * - `condition`: A boolean or a DSL schema object.
- * - `exec`: A `ValueHandler` to execute if the condition is met.
+ * - `exec`: A handler that is executed only if its `condition` is met.
+ * The `condition` can be a boolean or a DSL schema object.
+ * If `exec` is omitted, the handler will return `true` if the condition is met.
  */
-export type ConditionalHandler<T, R> = {
+export type ConditionalHandler<TInput, TOutput> = {
   condition: boolean | Record<string, string | true>;
-  exec: ValueHandler<T, R>;
+  exec?: (value: TInput) => TOutput;
 };
 
 /**
@@ -22,8 +24,11 @@ export type ConditionalHandler<T, R> = {
  * Useful for documentation and for users who want to be explicit.
  */
 export type AssertionHandlers<T, R> =
-  & Omit<{ [key: string]: ValueHandler<T, R> | ConditionalHandler<T, R> }, 'unknown'>
-  & { unknown?: ValueHandler<T, R> };
+  & Omit<{ [key: string]: ValueHandler<T, R> | ConditionalHandler<T, R> }, 'unknown' | 'Error'>
+  & { 
+      unknown?: ValueHandler<T, R>;
+      Error?: (error: Error) => R;
+    };
 
 /**
  * The builder object returned by `assert()`, providing the `.with()` method.

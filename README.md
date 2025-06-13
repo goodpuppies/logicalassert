@@ -127,6 +127,53 @@ try {
 
 ## Advanced Usage
 
+### Special `Error:` Handler
+
+Since handling caught errors is a very common use case, `LogicalAssert` provides a special `Error:` handler. If the input value is an `instanceof Error`, this handler will be used, and its parameter will be correctly typed as `Error`.
+
+```typescript
+import { assert } from "./mod.ts";
+
+try {
+  throw new TypeError("Invalid type provided");
+} catch (e) {
+  const errorMessage = assert(e).with({
+    Error: (err) => `Error caught: ${err.message}`,
+    unknown: () => "An unknown, non-error value was thrown",
+  });
+  console.log(errorMessage); // "Error caught: Invalid type provided"
+}
+```
+
+### Simple Assertions (exec-less handlers)
+
+For boolean checks, you can omit the `exec` property from a conditional handler. If the `condition` is `true`, the assertion will pass and return `true`. If no conditions match, an error is thrown. This is useful for validating multiple conditions on an object.
+
+```typescript
+import { assert } from "./mod.ts";
+
+function checkItem(item: { name: string; stock: number; tags: string[] }) {
+  // This will throw an error if any condition is false, because no handler will match.
+  return assert(item).with({
+    hasName: { condition: item.name.length > 0 },
+    isStocked: { condition: item.stock > 0 },
+    isTagged: { condition: item.tags.includes("sale") },
+  });
+}
+
+checkItem({ name: "Thing", stock: 10, tags: ["sale", "new"] }); // Returns true
+
+try {
+  checkItem({ name: "Gadget", stock: 0, tags: ["sale"] }); // Throws error
+} catch (e) {
+  // The `Error:` handler is a special case for `instanceof Error`.
+  assert(e).with({
+    Error: (err) => console.log(err.message),
+    unknown: () => console.log("Caught a non-error value."),
+  });
+}
+```
+
 ### Conditional Handlers with Booleans
 
 ```typescript

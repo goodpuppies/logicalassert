@@ -80,9 +80,30 @@ import type { LogicalAssertBuilder } from "./types.ts";
  *   });
  * } catch (e) {
  *   // The error object is of type unknown, so we must verify it's an Error.
- *   if (e instanceof Error) {
- *     assert(e.message.includes("Assertion failed for value: unexpected")).with({});
- *   }
+ *   // We can use the special `Error:` handler for this common case.
+ *   assert(e).with({
+ *     Error: (err) => {
+ *       // `err` is automatically typed as `Error`.
+ *       assertEquals(err.message.includes("Assertion failed for value: unexpected"), true);
+ *     },
+ *     unknown: () => "Caught a non-error value.",
+ *   });
+ * }
+ * ```
+ * 
+ * @example
+ * ```ts
+ * // Using the special `Error:` handler to process caught errors.
+ * import { assert } from "./LogicalAssert.ts";
+ * 
+ * try {
+ *   throw new Error("Something went wrong!");
+ * } catch (e) {
+ *   const result = assert(e).with({
+ *     Error: (err) => `Caught an error: ${err.message}`,
+ *     unknown: () => "Caught a non-error value.",
+ *   });
+ *   console.log(result); // "Caught an error: Something went wrong!"
  * }
  * ```
  */
@@ -91,6 +112,11 @@ export function assert<TInput>(value: TInput): LogicalAssertBuilder<TInput> {
     with<THandlers extends HandlerArgumentForInference<TInput>>(
       handlers: THandlers
     ): UnionOfAllHandlerReturnTypes<THandlers> {
+      // Special case: Handle `instanceof Error` with a dedicated `Error:` handler.
+      if (handlers.Error && value instanceof Error) {
+        return handlers.Error(value) as UnionOfAllHandlerReturnTypes<THandlers>;
+      }
+
       const callSite = new Error().stack!.split('\n')[2]
 
       for (const key of Object.keys(handlers)) {
@@ -99,28 +125,27 @@ export function assert<TInput>(value: TInput): LogicalAssertBuilder<TInput> {
         const handler = handlers[key];
   
         // Support for conditional handlers
-        if (
-          typeof handler === 'object' &&
-          handler !== null &&
-          !Array.isArray(handler) &&
-          'condition' in handler &&
-          'exec' in handler &&
-          typeof handler.exec === 'function'
-        ) {
-          let conditionMet = false;
-          const condition = handler.condition;
-  
+        if (typeof handler === 'object' && handler !== null && !Array.isArray(handler) && 'condition' in handler) {
+          let isMatch = false;
+          const condition = (handler as { condition: unknown }).condition;
+
           // Case 1: Simple boolean condition
           if (typeof condition === 'boolean') {
-            conditionMet = condition;
+            isMatch = condition;
           }
           // Case 2: DSL - Object schema for type validation
           else if (typeof condition === 'object' && !Array.isArray(condition) && condition !== null) {
-            conditionMet = evaluateDslCondition(value, condition as Record<string, string | true>);
+            isMatch = evaluateDslCondition(value, condition as Record<string, string | true>);
           }
-  
-          if (conditionMet) {
-            return handler.exec(value);
+
+          if (isMatch) {
+            // If a match is found, check if an `exec` function exists.
+            if (handler && typeof (handler as { exec?: unknown }).exec === 'function') {
+              return (handler as { exec: (v: TInput) => unknown }).exec(value) as UnionOfAllHandlerReturnTypes<THandlers>;
+            }
+            // If `exec` is not provided, the condition itself is the assertion.
+            // The inferred return type will be `true`.
+            return true as UnionOfAllHandlerReturnTypes<THandlers>;
           }
           continue;
         }

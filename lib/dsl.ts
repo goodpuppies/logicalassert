@@ -13,7 +13,7 @@
  * const schema1 = { name: 'string', age: 'number' };
  * console.log(evaluateDslCondition(user, schema1)); // true
  *
- * const schema2 = { name: 'string', country: true }; // 'country' must exist
+ * const schema2: Record<string, string | true> = { name: 'string', country: true }; // 'country' must exist
  * console.log(evaluateDslCondition(user, schema2)); // false, 'country' is missing
  *
  * const data = { items: [1, 2], meta: undefined };
@@ -24,18 +24,47 @@
 // lib/dsl.ts
 
 /**
- * Evaluates if a given value matches a DSL condition schema.
- * The schema is an object where keys are property names expected on the value,
- * and values are either:
- *  - `true`: The property must exist and not be null/undefined.
- *  - A type string (e.g., 'string', 'number', 'boolean', 'array', 'undefined'):
- *    The property must exist and match the specified type.
- *    For 'undefined', the property's value must be undefined.
- *    For other types, the property must also be non-null.
+ * Evaluates if a given `value` matches a DSL `schema`.
  *
- * @param value The value to check against the schema.
- * @param schema The DSL condition schema object.
- * @returns `true` if the value matches the schema, `false` otherwise.
+ * This function is particularly useful for validating the shape of objects.
+ * The `schema` is a record where keys correspond to property names in the `value`
+ * and values define the expected type or existence of that property.
+ *
+ * @param value The object to evaluate.
+ * @param schema A record defining the validation rules.
+ *   - `true`: The property must exist and not be `null` or `undefined`.
+ *   - `'string'`, `'number'`, `'boolean'`, `'object'`: The property must be of this `typeof`.
+ *   - `'array'`: The property must be an `Array`.
+ *   - `'undefined'`: The property must not exist on the object or be explicitly `undefined`.
+ * @returns `true` if the `value` matches the `schema`, `false` otherwise.
+ *
+ * @example
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * const user = { name: "John", age: 30, roles: ["admin", "editor"] };
+ *
+ * // Check for property existence and type
+ * const isValidUser = evaluateDslCondition(user, {
+ *   name: "string",
+ *   age: "number",
+ *   roles: "array",
+ * });
+ * assertEquals(isValidUser, true);
+ *
+ * // Check for a missing property
+ * const isMissingEmail = evaluateDslCondition(user, { email: "undefined" });
+ * assertEquals(isMissingEmail, true);
+ *
+ * // Fails if a property has the wrong type
+ * const isInvalid = evaluateDslCondition(user, { age: "string" });
+ * assertEquals(isInvalid, false);
+ *
+ * // Fails if a required property (checked with `true`) is missing
+ * const schemaForMissingProp: Record<string, string | true> = { name: "string", nonExistentProp: true };
+ * const evaluationResultForMissingProp = evaluateDslCondition(user, schemaForMissingProp);
+ * assertEquals(evaluationResultForMissingProp, false); // user (defined above) doesn't have nonExistentProp
+ * ```
  */
 export function evaluateDslCondition(
   value: unknown,
