@@ -222,5 +222,5 @@ async function main() {
   console.log("Result 2:", result2); // Result 2: DATA_Data for 123
 }
 
-main();
+await main();
 ```
